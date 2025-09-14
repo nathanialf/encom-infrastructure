@@ -44,14 +44,18 @@ pipeline {
                     
                     // Download JAR from S3
                     withAWS(credentials: awsCredentials, region: env.AWS_REGION) {
-                        // Create directory for JAR
-                        sh 'mkdir -p encom-lambda/build/libs'
+                        // Create directory for JAR and clean any existing file
+                        sh '''
+                            mkdir -p encom-lambda/build/libs
+                            rm -f encom-lambda/build/libs/encom-lambda-1.0.0-all.jar
+                        '''
                         
                         try {
                             // Try to download the latest JAR
                             s3Download bucket: 'encom-build-artifacts-dev-us-west-1',
-                                     key: 'artifacts/lambda/encom-lambda-latest.jar',
-                                     file: 'encom-lambda/build/libs/encom-lambda-1.0.0-all.jar'
+                                     path: 'artifacts/lambda/encom-lambda-latest.jar',
+                                     file: 'encom-lambda/build/libs/encom-lambda-1.0.0-all.jar',
+                                     force: true
                             
                             sh 'echo "JAR downloaded from S3: $(ls -la encom-lambda/build/libs/encom-lambda-1.0.0-all.jar)"'
                             
