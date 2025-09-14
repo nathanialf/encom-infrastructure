@@ -31,26 +31,18 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
+                // Checkout infrastructure code to subdirectory to avoid overwriting Lambda artifacts
+                dir('encom-infrastructure') {
+                    checkout scm
+                }
                 script {
-                    // Backup JAR file if it exists
+                    // Verify JAR file exists
                     sh '''
                         if [ -f /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/encom-lambda-1.0.0-all.jar ]; then
-                            mkdir -p /tmp/encom-backup
-                            cp /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/encom-lambda-1.0.0-all.jar /tmp/encom-backup/
-                            echo "Backed up JAR file"
-                        fi
-                    '''
-                }
-                checkout scm
-                script {
-                    // Restore JAR file after checkout
-                    sh '''
-                        if [ -f /tmp/encom-backup/encom-lambda-1.0.0-all.jar ]; then
-                            mkdir -p /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/
-                            cp /tmp/encom-backup/encom-lambda-1.0.0-all.jar /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/
-                            echo "Restored JAR file"
+                            echo "JAR file found: $(ls -la /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/encom-lambda-1.0.0-all.jar)"
                         else
-                            echo "No JAR file to restore - run ENCOM-Lambda with BUILD_ONLY=true first"
+                            echo "ERROR: JAR file not found - run ENCOM-Lambda with BUILD_ONLY=true first"
+                            exit 1
                         fi
                     '''
                 }
@@ -63,7 +55,7 @@ pipeline {
                     def awsCredentials = params.ENVIRONMENT == 'prod' ? 'aws-encom-prod' : 'aws-encom-dev'
                     
                     withAWS(credentials: awsCredentials, region: env.AWS_REGION) {
-                        dir("environments/${params.ENVIRONMENT}") {
+                        dir("encom-infrastructure/environments/${params.ENVIRONMENT}") {
                             sh '''
                                 terraform init
                             '''
@@ -79,7 +71,7 @@ pipeline {
                     def awsCredentials = params.ENVIRONMENT == 'prod' ? 'aws-encom-prod' : 'aws-encom-dev'
                     
                     withAWS(credentials: awsCredentials, region: env.AWS_REGION) {
-                        dir("environments/${params.ENVIRONMENT}") {
+                        dir("encom-infrastructure/environments/${params.ENVIRONMENT}") {
                             sh '''
                                 terraform plan -var-file=terraform.tfvars -out=tfplan
                             '''
@@ -102,7 +94,7 @@ pipeline {
                     def awsCredentials = params.ENVIRONMENT == 'prod' ? 'aws-encom-prod' : 'aws-encom-dev'
                     
                     withAWS(credentials: awsCredentials, region: env.AWS_REGION) {
-                        dir("environments/${params.ENVIRONMENT}") {
+                        dir("encom-infrastructure/environments/${params.ENVIRONMENT}") {
                             sh '''
                                 terraform apply tfplan
                             '''
@@ -122,7 +114,7 @@ pipeline {
                     def awsCredentials = params.ENVIRONMENT == 'prod' ? 'aws-encom-prod' : 'aws-encom-dev'
                     
                     withAWS(credentials: awsCredentials, region: env.AWS_REGION) {
-                        dir("environments/${params.ENVIRONMENT}") {
+                        dir("encom-infrastructure/environments/${params.ENVIRONMENT}") {
                             sh '''
                                 terraform destroy -var-file=terraform.tfvars -auto-approve
                             '''
