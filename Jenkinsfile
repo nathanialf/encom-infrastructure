@@ -42,11 +42,11 @@ pipeline {
                 script {
                     // Verify JAR file exists
                     sh '''
-                        if [ -f /var/lib/jenkins/workspace/ENCOM-Shared/build/libs/encom-lambda-1.0.0-all.jar ]; then
-                            echo "JAR file found: $(ls -la /var/lib/jenkins/workspace/ENCOM-Shared/build/libs/encom-lambda-1.0.0-all.jar)"
+                        if [ -f /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/encom-lambda-1.0.0-all.jar ]; then
+                            echo "JAR file found: $(ls -la /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/encom-lambda-1.0.0-all.jar)"
                         else
                             echo "ERROR: JAR file not found - run ENCOM-Lambda with BUILD_ONLY=true first"
-                            echo "Looking for: /var/lib/jenkins/workspace/ENCOM-Shared/build/libs/encom-lambda-1.0.0-all.jar"
+                            echo "Looking for: /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/encom-lambda-1.0.0-all.jar"
                             exit 1
                         fi
                     '''
