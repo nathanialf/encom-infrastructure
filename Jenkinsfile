@@ -40,16 +40,31 @@ pipeline {
                     checkout scm
                 }
                 script {
-                    // Verify JAR file exists
-                    sh '''
-                        if [ -f /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/encom-lambda-1.0.0-all.jar ]; then
-                            echo "JAR file found: $(ls -la /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/encom-lambda-1.0.0-all.jar)"
-                        else
-                            echo "ERROR: JAR file not found - run ENCOM-Lambda with BUILD_ONLY=true first"
-                            echo "Looking for: /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/encom-lambda-1.0.0-all.jar"
-                            exit 1
-                        fi
-                    '''
+                    // Check if JAR file exists, build it if missing
+                    def jarExists = sh(script: '[ -f /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/encom-lambda-1.0.0-all.jar ]', returnStatus: true) == 0
+                    
+                    if (jarExists) {
+                        echo "JAR file found: $(ls -la /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/encom-lambda-1.0.0-all.jar)"
+                    } else {
+                        echo "JAR file not found. Triggering Lambda build..."
+                        
+                        // Trigger ENCOM-Lambda build with BUILD_ONLY=true
+                        build job: 'ENCOM-Lambda', parameters: [
+                            choice(name: 'ENVIRONMENT', value: params.ENVIRONMENT),
+                            booleanParam(name: 'SKIP_TESTS', value: false),
+                            booleanParam(name: 'BUILD_ONLY', value: true)
+                        ], wait: true
+                        
+                        // Verify JAR was created
+                        sh '''
+                            if [ -f /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/encom-lambda-1.0.0-all.jar ]; then
+                                echo "JAR file successfully built: $(ls -la /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/encom-lambda-1.0.0-all.jar)"
+                            else
+                                echo "ERROR: JAR file still not found after build"
+                                exit 1
+                            fi
+                        '''
+                    }
                 }
             }
         }
