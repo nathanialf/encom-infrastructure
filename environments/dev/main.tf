@@ -81,8 +81,7 @@ module "lambda" {
   }
   
   enable_function_url           = var.enable_lambda_function_url
-  enable_api_gateway_integration = true
-  api_gateway_execution_arn     = module.api_gateway.api_execution_arn
+  enable_api_gateway_integration = false
   
   tags = merge(local.common_tags, {
     Component = "lambda"
@@ -109,6 +108,17 @@ module "api_gateway" {
   })
   
   depends_on = [module.lambda]
+}
+
+# Lambda permission for API Gateway (created separately to avoid circular dependency)
+resource "aws_lambda_permission" "api_gateway_invoke" {
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = module.lambda.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${module.api_gateway.api_execution_arn}/*/*"
+  
+  depends_on = [module.lambda, module.api_gateway]
 }
 
 # Frontend Module (optional for dev)
