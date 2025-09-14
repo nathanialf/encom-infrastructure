@@ -31,7 +31,29 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
+                script {
+                    // Backup JAR file if it exists
+                    sh '''
+                        if [ -f /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/encom-lambda-1.0.0-all.jar ]; then
+                            mkdir -p /tmp/encom-backup
+                            cp /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/encom-lambda-1.0.0-all.jar /tmp/encom-backup/
+                            echo "Backed up JAR file"
+                        fi
+                    '''
+                }
                 checkout scm
+                script {
+                    // Restore JAR file after checkout
+                    sh '''
+                        if [ -f /tmp/encom-backup/encom-lambda-1.0.0-all.jar ]; then
+                            mkdir -p /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/
+                            cp /tmp/encom-backup/encom-lambda-1.0.0-all.jar /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/
+                            echo "Restored JAR file"
+                        else
+                            echo "No JAR file to restore - run ENCOM-Lambda with BUILD_ONLY=true first"
+                        fi
+                    '''
+                }
             }
         }
         
