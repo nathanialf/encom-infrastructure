@@ -44,7 +44,7 @@ pipeline {
                     def jarExists = sh(script: '[ -f /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/encom-lambda-1.0.0-all.jar ]', returnStatus: true) == 0
                     
                     if (jarExists) {
-                        echo "JAR file found: $(ls -la /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/encom-lambda-1.0.0-all.jar)"
+                        sh 'echo "JAR file found: $(ls -la /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/encom-lambda-1.0.0-all.jar)"'
                     } else {
                         echo "JAR file not found. Triggering Lambda build..."
                         
@@ -58,7 +58,7 @@ pipeline {
                         // Verify JAR was created
                         sh '''
                             if [ -f /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/encom-lambda-1.0.0-all.jar ]; then
-                                echo "JAR file successfully built: $(ls -la /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/encom-lambda-1.0.0-all.jar)"
+                                echo "JAR file successfully built: \\$(ls -la /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/encom-lambda-1.0.0-all.jar)"
                             else
                                 echo "ERROR: JAR file still not found after build"
                                 exit 1
