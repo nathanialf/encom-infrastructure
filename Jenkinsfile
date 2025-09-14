@@ -27,6 +27,16 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
+                script {
+                    // Copy Lambda JAR from Lambda pipeline artifacts
+                    copyArtifacts(
+                        projectName: 'ENCOM-Lambda',
+                        filter: 'build/libs/*.jar',
+                        target: 'encom-lambda/build/libs/',
+                        flatten: false,
+                        optional: false
+                    )
+                }
             }
         }
         
