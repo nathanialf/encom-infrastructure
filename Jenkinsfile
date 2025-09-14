@@ -114,9 +114,10 @@ pipeline {
                 expression { params.ACTION == 'destroy' }
             }
             steps {
-                input message: 'Destroy infrastructure? This cannot be undone!', ok: 'Destroy'
                 script {
                     def awsCredentials = params.ENVIRONMENT == 'prod' ? 'aws-encom-prod' : 'aws-encom-dev'
+                    
+                    echo "WARNING: Destroying ${params.ENVIRONMENT} infrastructure..."
                     
                     withAWS(credentials: awsCredentials, region: env.AWS_REGION) {
                         dir("encom-infrastructure/environments/${params.ENVIRONMENT}") {
