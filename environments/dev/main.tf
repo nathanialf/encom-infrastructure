@@ -40,7 +40,7 @@ locals {
   
   # Lambda configuration
   lambda_function_name = "${local.project_name}-map-generator-${local.environment}"
-  lambda_jar_path      = "encom-lambda/build/libs/encom-lambda-1.0.0-all.jar"
+  lambda_jar_path      = "/var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/encom-lambda-1.0.0-all.jar"
   
   # API Gateway configuration  
   api_name = "${local.project_name}-api-${local.environment}"
