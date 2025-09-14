@@ -40,30 +40,32 @@ pipeline {
                     checkout scm
                 }
                 script {
-                    // Check if JAR file exists, build it if missing
-                    def jarExists = sh(script: '[ -f /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/encom-lambda-1.0.0-all.jar ]', returnStatus: true) == 0
+                    def awsCredentials = params.ENVIRONMENT == 'prod' ? 'aws-encom-prod' : 'aws-encom-dev'
                     
-                    if (jarExists) {
-                        sh 'echo "JAR file found: $(ls -la /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/encom-lambda-1.0.0-all.jar)"'
-                    } else {
-                        echo "JAR file not found. Triggering Lambda build..."
+                    // Download JAR from S3
+                    withAWS(credentials: awsCredentials, region: env.AWS_REGION) {
+                        // Create directory for JAR
+                        sh 'mkdir -p encom-lambda/build/libs'
                         
-                        // Trigger ENCOM-Lambda build with BUILD_ONLY=true
-                        build job: 'ENCOM-Lambda', parameters: [
-                            choice(name: 'ENVIRONMENT', value: params.ENVIRONMENT),
-                            booleanParam(name: 'SKIP_TESTS', value: false),
-                            booleanParam(name: 'BUILD_ONLY', value: true)
-                        ], wait: true
-                        
-                        // Verify JAR was created
-                        sh '''
-                            if [ -f /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/encom-lambda-1.0.0-all.jar ]; then
-                                echo "JAR file successfully built: \\$(ls -la /var/lib/jenkins/workspace/ENCOM-Shared/encom-lambda/build/libs/encom-lambda-1.0.0-all.jar)"
-                            else
-                                echo "ERROR: JAR file still not found after build"
-                                exit 1
-                            fi
-                        '''
+                        try {
+                            // Try to download the latest JAR
+                            s3Download bucket: 'encom-build-artifacts-dev-us-west-1',
+                                     key: 'artifacts/lambda/encom-lambda-latest.jar',
+                                     file: 'encom-lambda/build/libs/encom-lambda-1.0.0-all.jar'
+                            
+                            sh 'echo "JAR downloaded from S3: $(ls -la encom-lambda/build/libs/encom-lambda-1.0.0-all.jar)"'
+                            
+                        } catch (Exception e) {
+                            error """Lambda JAR not found in S3. Please build the Lambda first.
+
+To build the JAR:
+1. Run ENCOM-Lambda job (any environment)
+2. JAR will be automatically uploaded to S3
+3. Then retry this Infrastructure deployment
+
+Error: ${e.getMessage()}
+Looking for: s3://encom-build-artifacts-dev-us-west-1/artifacts/lambda/encom-lambda-latest.jar"""
+                        }
                     }
                 }
             }
