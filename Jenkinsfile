@@ -6,6 +6,10 @@ pipeline {
         }
     }
     
+    options {
+        skipDefaultCheckout(true)
+    }
+    
     parameters {
         choice(
             name: 'ENVIRONMENT',
