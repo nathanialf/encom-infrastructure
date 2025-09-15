@@ -18,7 +18,7 @@ pipeline {
         )
         choice(
             name: 'ACTION',
-            choices: ['plan', 'apply', 'destroy'],
+            choices: ['bootstrap', 'plan', 'apply', 'destroy'],
             description: 'Terraform action to perform'
         )
     }
@@ -75,7 +75,33 @@ Looking for: s3://encom-build-artifacts-dev-us-west-1/artifacts/lambda/encom-lam
             }
         }
         
+        stage('Bootstrap S3 State Bucket') {
+            when {
+                expression { params.ACTION == 'bootstrap' }
+            }
+            steps {
+                script {
+                    def awsCredentials = params.ENVIRONMENT == 'prod' ? 'aws-encom-prod' : 'aws-encom-dev'
+                    
+                    withAWS(credentials: awsCredentials, region: env.AWS_REGION) {
+                        dir('encom-infrastructure/bootstrap') {
+                            sh '''
+                                echo "Creating S3 bucket for Terraform state..."
+                                terraform init
+                                terraform plan -out=bootstrap-plan
+                                terraform apply bootstrap-plan
+                                echo "S3 state bucket created successfully!"
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+        
         stage('Terraform Init') {
+            when {
+                not { expression { params.ACTION == 'bootstrap' } }
+            }
             steps {
                 script {
                     def awsCredentials = params.ENVIRONMENT == 'prod' ? 'aws-encom-prod' : 'aws-encom-dev'
@@ -92,6 +118,9 @@ Looking for: s3://encom-build-artifacts-dev-us-west-1/artifacts/lambda/encom-lam
         }
         
         stage('Terraform Plan') {
+            when {
+                not { expression { params.ACTION == 'bootstrap' } }
+            }
             steps {
                 script {
                     def awsCredentials = params.ENVIRONMENT == 'prod' ? 'aws-encom-prod' : 'aws-encom-dev'
