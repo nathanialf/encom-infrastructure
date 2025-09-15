@@ -240,6 +240,7 @@ resource "aws_acm_certificate" "custom_domain_cert" {
   
   lifecycle {
     create_before_destroy = true
+    ignore_changes = [domain_validation_options]
   }
   
   tags = var.tags
@@ -251,7 +252,7 @@ resource "aws_acm_certificate_validation" "custom_domain_cert_validation" {
   certificate_arn = aws_acm_certificate.custom_domain_cert[0].arn
   
   timeouts {
-    create = "10m"
+    create = "30m"
   }
 }
 
