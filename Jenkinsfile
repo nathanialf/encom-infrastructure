@@ -150,11 +150,19 @@ Looking for: s3://encom-build-artifacts-dev-us-west-1/artifacts/lambda/encom-lam
                     withAWS(credentials: awsCredentials, region: env.AWS_REGION) {
                         dir("encom-infrastructure/environments/${params.ENVIRONMENT}") {
                             sh '''
-                                echo "Force replacing conflicting Lambda resources..."
-                                terraform apply -replace="module.lambda.aws_iam_role.lambda_role" \
-                                               -replace="module.lambda.aws_cloudwatch_log_group.lambda_logs" \
-                                               -var-file=terraform.tfvars \
-                                               -auto-approve
+                                echo "Deleting existing conflicting resources..."
+                                
+                                # Delete existing IAM role (force detach policies first)
+                                echo "Deleting IAM role encom-map-generator-${ENVIRONMENT}-role..."
+                                aws iam detach-role-policy --role-name encom-map-generator-${ENVIRONMENT}-role --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole || echo "Policy not attached"
+                                aws iam delete-role --role-name encom-map-generator-${ENVIRONMENT}-role || echo "Role not found"
+                                
+                                # Delete existing CloudWatch log group
+                                echo "Deleting CloudWatch log group /aws/lambda/encom-map-generator-${ENVIRONMENT}..."
+                                aws logs delete-log-group --log-group-name /aws/lambda/encom-map-generator-${ENVIRONMENT} || echo "Log group not found"
+                                
+                                echo "Existing resources cleaned up. Now deploying infrastructure..."
+                                terraform apply -var-file=terraform.tfvars -auto-approve
                             '''
                         }
                     }
