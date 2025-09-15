@@ -8,12 +8,11 @@ terraform {
     }
   }
   
-  # Uncomment and configure for remote state
-  # backend "s3" {
-  #   bucket = "encom-terraform-state-dev"
-  #   key    = "encom-lambda/terraform.tfstate"
-  #   region = "us-west-1"
-  # }
+  backend "s3" {
+    bucket = "encom-terraform-state-dev-us-west-1"
+    key    = "encom-infrastructure/dev/terraform.tfstate"
+    region = "us-west-1"
+  }
 }
 
 # Configure AWS Provider
@@ -99,10 +98,6 @@ module "api_gateway" {
   stage_name        = local.environment
   lambda_invoke_arn = module.lambda.function_invoke_arn
   
-  # Custom domain configuration (optional)
-  custom_domain_name = var.custom_domain_name
-  certificate_arn    = var.certificate_arn
-  create_certificate = var.create_certificate
   
   enable_api_key        = var.enable_api_key
   throttle_rate_limit   = var.api_throttle_rate_limit

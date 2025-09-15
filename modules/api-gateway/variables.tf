@@ -56,23 +56,6 @@ variable "log_retention_days" {
   default     = 14
 }
 
-variable "custom_domain_name" {
-  description = "Custom domain name for API Gateway (e.g., dev.encom.riperoni.com)"
-  type        = string
-  default     = null
-}
-
-variable "certificate_arn" {
-  description = "ARN of the SSL certificate for the custom domain (if not creating one)"
-  type        = string
-  default     = null
-}
-
-variable "create_certificate" {
-  description = "Create SSL certificate via ACM (requires DNS validation)"
-  type        = bool
-  default     = true
-}
 
 variable "tags" {
   description = "Tags to apply to all resources"
