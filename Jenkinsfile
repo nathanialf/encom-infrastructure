@@ -18,7 +18,7 @@ pipeline {
         )
         choice(
             name: 'ACTION',
-            choices: ['plan', 'apply', 'destroy'],
+            choices: ['plan', 'apply', 'destroy', 'import'],
             description: 'Terraform action to perform'
         )
     }
@@ -100,6 +100,31 @@ Looking for: s3://encom-build-artifacts-dev-us-west-1/artifacts/lambda/encom-lam
                         dir("encom-infrastructure/environments/${params.ENVIRONMENT}") {
                             sh '''
                                 terraform plan -var-file=terraform.tfvars -out=tfplan
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+        
+        stage('Import Existing Resources') {
+            when {
+                expression { params.ACTION == 'import' }
+            }
+            steps {
+                script {
+                    def awsCredentials = params.ENVIRONMENT == 'prod' ? 'aws-encom-prod' : 'aws-encom-dev'
+                    
+                    withAWS(credentials: awsCredentials, region: env.AWS_REGION) {
+                        dir("encom-infrastructure/environments/${params.ENVIRONMENT}") {
+                            sh '''
+                                echo "Importing existing Lambda IAM role..."
+                                terraform import module.lambda.aws_iam_role.lambda_role encom-map-generator-${ENVIRONMENT}-role || echo "Role may already be imported"
+                                
+                                echo "Importing existing Lambda CloudWatch log group..."
+                                terraform import module.lambda.aws_cloudwatch_log_group.lambda_logs /aws/lambda/encom-map-generator-${ENVIRONMENT} || echo "Log group may already be imported"
+                                
+                                echo "Import complete! Run terraform plan to verify state."
                             '''
                         }
                     }
