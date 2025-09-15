@@ -123,16 +123,36 @@ resource "aws_lambda_permission" "api_gateway_invoke" {
   depends_on = [module.lambda, module.api_gateway]
 }
 
+# ACM Certificate for dev.encom.riperoni.com
+resource "aws_acm_certificate" "frontend" {
+  count             = var.deploy_frontend ? 1 : 0
+  domain_name       = "dev.encom.riperoni.com"
+  validation_method = "DNS"
+  
+  lifecycle {
+    create_before_destroy = true
+  }
+  
+  tags = merge(local.common_tags, {
+    Component = "frontend"
+    Name      = "dev.encom.riperoni.com"
+  })
+}
+
 # Frontend Module (optional for dev)
 module "frontend" {
   count  = var.deploy_frontend ? 1 : 0
   source = "../../modules/frontend"
   
-  bucket_name    = local.frontend_bucket_name
-  index_document = "index.html"
-  price_class    = "PriceClass_100"  # Cost-optimized for dev
+  bucket_name         = local.frontend_bucket_name
+  index_document      = "index.html"
+  price_class         = "PriceClass_100"  # Cost-optimized for dev
+  domain_name         = "dev.encom.riperoni.com"
+  ssl_certificate_arn = var.deploy_frontend ? aws_acm_certificate.frontend[0].arn : ""
   
   tags = merge(local.common_tags, {
     Component = "frontend"
   })
+  
+  depends_on = [aws_acm_certificate.frontend]
 }

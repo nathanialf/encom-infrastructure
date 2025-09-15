@@ -41,9 +41,10 @@ Terraform modules and configurations for deploying the ENCOM hexagonal map gener
 
 ### `modules/frontend/`
 - S3 bucket for static website hosting
-- CloudFront distribution with caching
-- Custom domain support (optional)
-- SSL certificate integration
+- CloudFront distribution with caching and SPA routing
+- Custom domain support with SSL certificate
+- ACM certificate with DNS validation
+- Origin Access Control for secure S3 access
 
 ## Environments
 
@@ -52,7 +53,7 @@ Terraform modules and configurations for deploying the ENCOM hexagonal map gener
 - Short log retention (7 days)
 - No API key required
 - Low rate limits
-- Optional frontend deployment
+- Frontend deployment with custom domain: `dev.encom.riperoni.com`
 
 ### Production (`environments/prod/`)
 - Production-grade configuration
