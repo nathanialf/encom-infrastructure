@@ -47,7 +47,7 @@ locals {
   api_name = "${local.project_name}-api-${local.environment}"
   
   # Frontend configuration
-  bucket_name = "${local.project_name}-frontend-${local.environment}-${random_string.bucket_suffix.result}"
+  frontend_bucket_name = "${local.project_name}-frontend-${local.environment}-${data.aws_region.current.name}"
   
   common_tags = {
     Project     = local.project_name
@@ -128,7 +128,7 @@ module "frontend" {
   count  = var.deploy_frontend ? 1 : 0
   source = "../../modules/frontend"
   
-  bucket_name    = local.bucket_name
+  bucket_name    = local.frontend_bucket_name
   index_document = "index.html"
   price_class    = "PriceClass_100"  # Cost-optimized for dev
   

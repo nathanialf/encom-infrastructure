@@ -18,7 +18,7 @@ api_throttle_burst_limit   = 20     # Burst up to 20 requests
 api_quota_limit           = 1000   # 1000 requests per month
 
 # Frontend Configuration
-deploy_frontend = false  # Skip frontend infrastructure for now
+deploy_frontend = true
 
 # Logging Configuration
 log_retention_days = 7  # 7 days for dev environment
