@@ -8,7 +8,7 @@ enable_lambda_function_url = false
 
 # Map Generation Configuration
 default_hexagon_count = 50
-max_hexagon_count    = 200
+max_hexagon_count    = 1000
 corridor_ratio       = 0.7
 
 # API Gateway Configuration
