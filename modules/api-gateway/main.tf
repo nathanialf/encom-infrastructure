@@ -232,6 +232,14 @@ resource "aws_cloudwatch_log_group" "api_gateway_logs" {
 # Data source for current AWS region
 data "aws_region" "current" {}
 
+# Data source to lookup existing certificate for the domain
+data "aws_acm_certificate" "existing_cert" {
+  count       = var.custom_domain_name != null && !var.create_certificate ? 1 : 0
+  domain      = var.custom_domain_name
+  most_recent = true
+  statuses    = ["PENDING_VALIDATION", "ISSUED"]
+}
+
 # SSL Certificate for custom domain (optional)
 resource "aws_acm_certificate" "custom_domain_cert" {
   count                     = var.custom_domain_name != null && var.create_certificate ? 1 : 0
@@ -246,21 +254,23 @@ resource "aws_acm_certificate" "custom_domain_cert" {
   tags = var.tags
 }
 
-# Certificate validation (optional)
-resource "aws_acm_certificate_validation" "custom_domain_cert_validation" {
-  count           = var.custom_domain_name != null && var.create_certificate ? 1 : 0
-  certificate_arn = aws_acm_certificate.custom_domain_cert[0].arn
-  
-  timeouts {
-    create = "30m"
-  }
-}
+# Certificate validation (optional) - commented out to allow manual DNS validation
+# resource "aws_acm_certificate_validation" "custom_domain_cert_validation" {
+#   count           = var.custom_domain_name != null && var.create_certificate ? 1 : 0
+#   certificate_arn = aws_acm_certificate.custom_domain_cert[0].arn
+#   
+#   timeouts {
+#     create = "30m"
+#   }
+# }
 
 # Custom domain name for API Gateway (optional)
 resource "aws_api_gateway_domain_name" "custom_domain" {
-  count           = var.custom_domain_name != null ? 1 : 0
-  domain_name     = var.custom_domain_name
-  certificate_arn = var.create_certificate ? aws_acm_certificate_validation.custom_domain_cert_validation[0].certificate_arn : var.certificate_arn
+  count       = var.custom_domain_name != null ? 1 : 0
+  domain_name = var.custom_domain_name
+  certificate_arn = var.create_certificate ? aws_acm_certificate.custom_domain_cert[0].arn : (
+    var.certificate_arn != null ? var.certificate_arn : data.aws_acm_certificate.existing_cert[0].arn
+  )
 
   tags = var.tags
 }

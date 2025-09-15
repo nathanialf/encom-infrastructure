@@ -22,3 +22,8 @@ deploy_frontend = false  # Skip frontend infrastructure for now
 
 # Logging Configuration
 log_retention_days = 7  # 7 days for dev environment
+
+# Custom Domain Configuration
+custom_domain_name = "dev.encom.riperoni.com"
+create_certificate = false  # Use existing certificate via data source
+certificate_arn    = null   # Will use data source to find existing cert
