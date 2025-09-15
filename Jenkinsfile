@@ -18,13 +18,8 @@ pipeline {
         )
         choice(
             name: 'ACTION',
-            choices: ['plan', 'apply', 'destroy', 'apply-replace'],
+            choices: ['plan', 'apply', 'destroy'],
             description: 'Terraform action to perform'
-        )
-        booleanParam(
-            name: 'FORCE_REPLACE',
-            defaultValue: false,
-            description: 'Force replace conflicting resources (use with apply-replace)'
         )
     }
     
@@ -127,6 +122,18 @@ Looking for: s3://encom-build-artifacts-dev-us-west-1/artifacts/lambda/encom-lam
                     withAWS(credentials: awsCredentials, region: env.AWS_REGION) {
                         dir("encom-infrastructure/environments/${params.ENVIRONMENT}") {
                             sh '''
+                                echo "Importing existing resources to avoid conflicts..."
+                                
+                                # Import existing IAM role if it exists
+                                terraform import -var-file=terraform.tfvars module.lambda.aws_iam_role.lambda_role encom-map-generator-${ENVIRONMENT}-role || echo "IAM role not found or already imported"
+                                
+                                # Import existing CloudWatch log group if it exists
+                                terraform import -var-file=terraform.tfvars module.lambda.aws_cloudwatch_log_group.lambda_logs /aws/lambda/encom-map-generator-${ENVIRONMENT} || echo "Log group not found or already imported"
+                                
+                                # Import existing Lambda function if it exists
+                                terraform import -var-file=terraform.tfvars module.lambda.aws_lambda_function.function encom-map-generator-${ENVIRONMENT} || echo "Lambda function not found or already imported"
+                                
+                                echo "Import completed. Now applying configuration..."
                                 terraform apply tfplan
                             '''
                         }
@@ -135,40 +142,6 @@ Looking for: s3://encom-build-artifacts-dev-us-west-1/artifacts/lambda/encom-lam
             }
         }
         
-        stage('Terraform Apply with Replace') {
-            when {
-                expression { params.ACTION == 'apply-replace' }
-            }
-            steps {
-                script {
-                    if (params.ENVIRONMENT == 'prod') {
-                        input message: 'Apply to Production with Force Replace?', ok: 'Apply'
-                    }
-                    
-                    def awsCredentials = params.ENVIRONMENT == 'prod' ? 'aws-encom-prod' : 'aws-encom-dev'
-                    
-                    withAWS(credentials: awsCredentials, region: env.AWS_REGION) {
-                        dir("encom-infrastructure/environments/${params.ENVIRONMENT}") {
-                            sh '''
-                                echo "Deleting existing conflicting resources..."
-                                
-                                # Delete existing IAM role (force detach policies first)
-                                echo "Deleting IAM role encom-map-generator-${ENVIRONMENT}-role..."
-                                aws iam detach-role-policy --role-name encom-map-generator-${ENVIRONMENT}-role --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole || echo "Policy not attached"
-                                aws iam delete-role --role-name encom-map-generator-${ENVIRONMENT}-role || echo "Role not found"
-                                
-                                # Delete existing CloudWatch log group
-                                echo "Deleting CloudWatch log group /aws/lambda/encom-map-generator-${ENVIRONMENT}..."
-                                aws logs delete-log-group --log-group-name /aws/lambda/encom-map-generator-${ENVIRONMENT} || echo "Log group not found"
-                                
-                                echo "Existing resources cleaned up. Now deploying infrastructure..."
-                                terraform apply -var-file=terraform.tfvars -auto-approve
-                            '''
-                        }
-                    }
-                }
-            }
-        }
         
         stage('Terraform Destroy') {
             when {
