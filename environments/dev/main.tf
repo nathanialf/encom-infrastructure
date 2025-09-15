@@ -28,6 +28,20 @@ provider "aws" {
   }
 }
 
+# AWS Provider for us-east-1 (required for CloudFront certificates)
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+  
+  default_tags {
+    tags = {
+      Project     = "encom"
+      Environment = "dev"
+      ManagedBy   = "terraform"
+    }
+  }
+}
+
 # Data sources
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
@@ -123,8 +137,9 @@ resource "aws_lambda_permission" "api_gateway_invoke" {
   depends_on = [module.lambda, module.api_gateway]
 }
 
-# ACM Certificate for dev.encom.riperoni.com
+# ACM Certificate for dev.encom.riperoni.com (must be in us-east-1 for CloudFront)
 resource "aws_acm_certificate" "frontend" {
+  provider          = aws.us_east_1
   count             = var.deploy_frontend ? 1 : 0
   domain_name       = "dev.encom.riperoni.com"
   validation_method = "DNS"
