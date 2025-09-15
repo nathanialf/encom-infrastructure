@@ -134,7 +134,7 @@ Looking for: s3://encom-build-artifacts-dev-us-west-1/artifacts/lambda/encom-lam
                                 terraform import -var-file=terraform.tfvars module.lambda.aws_lambda_function.function encom-map-generator-${ENVIRONMENT} || echo "Lambda function not found or already imported"
                                 
                                 # Import existing Lambda alias if it exists
-                                terraform import -var-file=terraform.tfvars module.lambda.aws_lambda_alias.function_alias encom-map-generator-${ENVIRONMENT}:live || echo "Lambda alias not found or already imported"
+                                terraform import -var-file=terraform.tfvars module.lambda.aws_lambda_alias.function_alias encom-map-generator-${ENVIRONMENT}/live || echo "Lambda alias not found or already imported"
                                 
                                 echo "Import completed. Generating fresh plan and applying..."
                                 terraform plan -var-file=terraform.tfvars -out=tfplan-fresh
