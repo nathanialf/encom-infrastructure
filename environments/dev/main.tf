@@ -162,8 +162,8 @@ module "frontend" {
   bucket_name         = local.frontend_bucket_name
   index_document      = "index.html"
   price_class         = "PriceClass_100"  # Cost-optimized for dev
-  domain_name         = "dev.encom.riperoni.com"
-  ssl_certificate_arn = var.deploy_frontend ? aws_acm_certificate.frontend[0].arn : ""
+  domain_name         = ""  # Temporarily disabled until certificate is validated
+  ssl_certificate_arn = ""
   
   tags = merge(local.common_tags, {
     Component = "frontend"
