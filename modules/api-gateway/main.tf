@@ -228,3 +228,47 @@ resource "aws_cloudwatch_log_group" "api_gateway_logs" {
   
   tags = var.tags
 }
+
+# Data source for current AWS region
+data "aws_region" "current" {}
+
+# SSL Certificate for custom domain (optional)
+resource "aws_acm_certificate" "custom_domain_cert" {
+  count                     = var.custom_domain_name != null && var.create_certificate ? 1 : 0
+  domain_name               = var.custom_domain_name
+  validation_method         = "DNS"
+  
+  lifecycle {
+    create_before_destroy = true
+  }
+  
+  tags = var.tags
+}
+
+# Certificate validation (optional)
+resource "aws_acm_certificate_validation" "custom_domain_cert_validation" {
+  count           = var.custom_domain_name != null && var.create_certificate ? 1 : 0
+  certificate_arn = aws_acm_certificate.custom_domain_cert[0].arn
+  
+  timeouts {
+    create = "10m"
+  }
+}
+
+# Custom domain name for API Gateway (optional)
+resource "aws_api_gateway_domain_name" "custom_domain" {
+  count           = var.custom_domain_name != null ? 1 : 0
+  domain_name     = var.custom_domain_name
+  certificate_arn = var.create_certificate ? aws_acm_certificate_validation.custom_domain_cert_validation[0].certificate_arn : var.certificate_arn
+
+  tags = var.tags
+}
+
+# Base path mapping for custom domain
+resource "aws_api_gateway_base_path_mapping" "custom_domain_mapping" {
+  count       = var.custom_domain_name != null ? 1 : 0
+  api_id      = aws_api_gateway_rest_api.api.id
+  stage_name  = aws_api_gateway_stage.stage.stage_name
+  domain_name = aws_api_gateway_domain_name.custom_domain[0].domain_name
+  base_path   = "api"  # Maps /api to the actual stage
+}

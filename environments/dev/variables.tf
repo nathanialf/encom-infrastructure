@@ -74,6 +74,25 @@ variable "deploy_frontend" {
   default     = false  # Skip frontend for now
 }
 
+# Custom Domain Configuration
+variable "custom_domain_name" {
+  description = "Custom domain name for API Gateway (e.g., dev.encom.riperoni.com)"
+  type        = string
+  default     = "dev.encom.riperoni.com"  # Dev environment domain
+}
+
+variable "certificate_arn" {
+  description = "ARN of the SSL certificate for the custom domain (if not creating one)"
+  type        = string
+  default     = null  # Only required if create_certificate is false
+}
+
+variable "create_certificate" {
+  description = "Create SSL certificate via ACM (requires DNS validation)"
+  type        = bool
+  default     = true  # Automatically create certificate
+}
+
 # Logging Configuration
 variable "log_retention_days" {
   description = "CloudWatch log retention in days"

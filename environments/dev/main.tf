@@ -129,6 +129,11 @@ module "api_gateway" {
   stage_name        = local.environment
   lambda_invoke_arn = module.lambda.function_invoke_arn
   
+  # Custom domain configuration (optional)
+  custom_domain_name = var.custom_domain_name
+  certificate_arn    = var.certificate_arn
+  create_certificate = var.create_certificate
+  
   enable_api_key        = var.enable_api_key
   throttle_rate_limit   = var.api_throttle_rate_limit
   throttle_burst_limit  = var.api_throttle_burst_limit
