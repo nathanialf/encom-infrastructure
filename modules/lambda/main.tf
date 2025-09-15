@@ -14,7 +14,8 @@ terraform {
 
 # Create IAM role for Lambda execution
 resource "aws_iam_role" "lambda_role" {
-  name = "${var.function_name}-role"
+  name                  = "${var.function_name}-role"
+  force_detach_policies = true
   
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -30,6 +31,10 @@ resource "aws_iam_role" "lambda_role" {
   })
   
   tags = var.tags
+  
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # Attach basic Lambda execution policy
@@ -54,8 +59,13 @@ resource "aws_iam_role_policy" "lambda_custom_policy" {
 resource "aws_cloudwatch_log_group" "lambda_logs" {
   name              = "/aws/lambda/${var.function_name}"
   retention_in_days = var.log_retention_days
+  skip_destroy      = false
   
   tags = var.tags
+  
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # Lambda function
