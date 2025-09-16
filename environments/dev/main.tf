@@ -162,14 +162,50 @@ module "frontend" {
   bucket_name         = local.frontend_bucket_name
   index_document      = "index.html"
   price_class         = "PriceClass_100"  # Cost-optimized for dev
-  domain_name         = ""  # Temporarily disabled until certificate is validated
-  ssl_certificate_arn = ""
+  domain_name         = "dev.encom.riperoni.com"
+  ssl_certificate_arn = var.deploy_frontend ? aws_acm_certificate_validation.frontend[0].certificate_arn : ""
   
   tags = merge(local.common_tags, {
     Component = "frontend"
   })
   
-  depends_on = [aws_acm_certificate.frontend]
+  depends_on = [aws_acm_certificate_validation.frontend]
+}
+
+# Route53 Hosted Zone (import existing)
+resource "aws_route53_zone" "main" {
+  name = "dev.encom.riperoni.com"
+  
+  tags = merge(local.common_tags, {
+    Component = "dns"
+    Name      = "dev.encom.riperoni.com"
+  })
+}
+
+# Route53 DNS validation record for ACM certificate
+resource "aws_route53_record" "cert_validation" {
+  for_each = var.deploy_frontend ? {
+    for dvo in aws_acm_certificate.frontend[0].domain_validation_options : dvo.domain_name => {
+      name   = dvo.resource_record_name
+      record = dvo.resource_record_value
+      type   = dvo.resource_record_type
+    }
+  } : {}
+
+  allow_overwrite = true
+  name            = each.value.name
+  records         = [each.value.record]
+  ttl             = 60
+  type            = each.value.type
+  zone_id         = aws_route53_zone.main.zone_id
+}
+
+# ACM certificate validation
+resource "aws_acm_certificate_validation" "frontend" {
+  provider                = aws.us_east_1
+  count                   = var.deploy_frontend ? 1 : 0
+  certificate_arn         = aws_acm_certificate.frontend[0].arn
+  validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
 }
 
 # S3 Bucket for build artifacts
