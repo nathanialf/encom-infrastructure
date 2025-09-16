@@ -208,6 +208,18 @@ resource "aws_acm_certificate_validation" "frontend" {
   validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
 }
 
+# Route53 CNAME record pointing to CloudFront distribution
+resource "aws_route53_record" "frontend_cname" {
+  count   = var.deploy_frontend ? 1 : 0
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "dev.encom.riperoni.com"
+  type    = "CNAME"
+  ttl     = 300
+  records = [module.frontend[0].cloudfront_domain_name]
+  
+  depends_on = [module.frontend]
+}
+
 # S3 Bucket for build artifacts
 resource "aws_s3_bucket" "build_artifacts" {
   bucket = "encom-build-artifacts-dev-us-west-1"
