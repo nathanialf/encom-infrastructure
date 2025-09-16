@@ -208,14 +208,18 @@ resource "aws_acm_certificate_validation" "frontend" {
   validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
 }
 
-# Route53 CNAME record pointing to CloudFront distribution
-resource "aws_route53_record" "frontend_cname" {
+# Route53 A record with alias pointing to CloudFront distribution
+resource "aws_route53_record" "frontend_alias" {
   count   = var.deploy_frontend ? 1 : 0
   zone_id = aws_route53_zone.main.zone_id
   name    = "dev.encom.riperoni.com"
-  type    = "CNAME"
-  ttl     = 300
-  records = [module.frontend[0].cloudfront_domain_name]
+  type    = "A"
+  
+  alias {
+    name                   = module.frontend[0].cloudfront_domain_name
+    zone_id                = module.frontend[0].cloudfront_hosted_zone_id
+    evaluate_target_health = false
+  }
   
   depends_on = [module.frontend]
 }

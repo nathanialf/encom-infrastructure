@@ -13,6 +13,11 @@ output "bucket_domain_name" {
   value       = aws_s3_bucket.website.bucket_domain_name
 }
 
+output "distribution_id" {
+  description = "ID of the CloudFront distribution"
+  value       = aws_cloudfront_distribution.website.id
+}
+
 output "cloudfront_distribution_id" {
   description = "ID of the CloudFront distribution"
   value       = aws_cloudfront_distribution.website.id
@@ -26,6 +31,11 @@ output "cloudfront_distribution_arn" {
 output "cloudfront_domain_name" {
   description = "Domain name of the CloudFront distribution"
   value       = aws_cloudfront_distribution.website.domain_name
+}
+
+output "cloudfront_hosted_zone_id" {
+  description = "Hosted zone ID of the CloudFront distribution"
+  value       = aws_cloudfront_distribution.website.hosted_zone_id
 }
 
 output "website_url" {
