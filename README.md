@@ -43,7 +43,7 @@ Terraform modules and configurations for deploying the ENCOM hexagonal map gener
 - S3 bucket for static website hosting
 - CloudFront distribution with caching and SPA routing
 - Custom domain support with SSL certificate
-- ACM certificate with DNS validation
+- ACM certificate with automated DNS validation via Route53
 - Origin Access Control for secure S3 access
 
 ## Environments
@@ -54,6 +54,7 @@ Terraform modules and configurations for deploying the ENCOM hexagonal map gener
 - No API key required
 - Low rate limits
 - Frontend deployment with custom domain: `dev.encom.riperoni.com`
+- Automated SSL certificate validation via Route53 DNS
 
 ### Production (`environments/prod/`)
 - Production-grade configuration
@@ -117,7 +118,7 @@ curl -X POST "$(terraform output -raw api_gateway_endpoint)" \
 | `lambda_timeout` | Lambda timeout in seconds | `30` |
 | `enable_api_key` | Enable API key auth | `false` (dev) |
 | `api_throttle_rate_limit` | Requests per second | `10` (dev) |
-| `deploy_frontend` | Deploy S3+CloudFront | `false` |
+| `deploy_frontend` | Deploy S3+CloudFront with SSL | `false` (dev), `true` (prod) |
 
 ### Environment Variables (Lambda)
 
