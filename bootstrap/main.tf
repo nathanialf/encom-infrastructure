@@ -22,15 +22,21 @@ provider "aws" {
   }
 }
 
+# Variables
+variable "environment" {
+  description = "Environment name (dev, prod)"
+  type        = string
+}
+
 # Create S3 bucket for Terraform state
 module "terraform_state" {
   source = "../modules/terraform-state"
   
-  bucket_name = "encom-terraform-state-dev-us-west-1"
+  bucket_name = "encom-terraform-state-${var.environment}-us-west-1"
   
   tags = {
     Project     = "encom"
-    Environment = "dev"
+    Environment = var.environment
     Component   = "terraform-state"
   }
 }

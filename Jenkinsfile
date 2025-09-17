@@ -92,13 +92,13 @@ Looking for: s3://${bucketName}/artifacts/lambda/encom-lambda-latest.jar"""
                     
                     withAWS(credentials: awsCredentials, region: env.AWS_REGION) {
                         dir('encom-infrastructure/bootstrap') {
-                            sh '''
+                            sh """
                                 echo "Creating S3 bucket for Terraform state..."
                                 terraform init
-                                terraform plan -out=bootstrap-plan
+                                terraform plan -var="environment=${params.ENVIRONMENT}" -out=bootstrap-plan
                                 terraform apply bootstrap-plan
                                 echo "S3 state bucket created successfully!"
-                            '''
+                            """
                         }
                     }
                 }

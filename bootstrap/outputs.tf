@@ -7,7 +7,7 @@ output "backend_configuration" {
   description = "Backend configuration for main Terraform"
   value = {
     bucket = module.terraform_state.s3_bucket_name
-    key    = "encom-infrastructure/dev/terraform.tfstate"
+    key    = "encom-infrastructure/${var.environment}/terraform.tfstate"
     region = "us-west-1"
   }
 }
