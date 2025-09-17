@@ -42,34 +42,41 @@ pipeline {
                 script {
                     def awsCredentials = params.ENVIRONMENT == 'prod' ? 'aws-encom-prod' : 'aws-encom-dev'
                     
-                    // Download JAR from S3
-                    withAWS(credentials: awsCredentials, region: env.AWS_REGION) {
-                        // Create directory for JAR and clean any existing file
-                        sh '''
-                            mkdir -p encom-lambda/build/libs
-                            rm -f encom-lambda/build/libs/encom-lambda-1.0.0-all.jar
-                        '''
-                        
-                        try {
-                            // Try to download the latest JAR
-                            s3Download bucket: 'encom-build-artifacts-dev-us-west-1',
-                                     path: 'artifacts/lambda/encom-lambda-latest.jar',
-                                     file: 'encom-lambda/build/libs/encom-lambda-1.0.0-all.jar',
-                                     force: true
+                    // Only download JAR if not doing bootstrap (bootstrap doesn't need Lambda JAR)
+                    if (params.ACTION != 'bootstrap') {
+                        // Download JAR from S3
+                        withAWS(credentials: awsCredentials, region: env.AWS_REGION) {
+                            // Create directory for JAR and clean any existing file
+                            sh '''
+                                mkdir -p encom-lambda/build/libs
+                                rm -f encom-lambda/build/libs/encom-lambda-1.0.0-all.jar
+                            '''
                             
-                            sh 'echo "JAR downloaded from S3: $(ls -la encom-lambda/build/libs/encom-lambda-1.0.0-all.jar)"'
+                            def bucketName = "encom-build-artifacts-${params.ENVIRONMENT}-us-west-1"
                             
-                        } catch (Exception e) {
-                            error """Lambda JAR not found in S3. Please build the Lambda first.
+                            try {
+                                // Try to download the latest JAR
+                                s3Download bucket: bucketName,
+                                         path: 'artifacts/lambda/encom-lambda-latest.jar',
+                                         file: 'encom-lambda/build/libs/encom-lambda-1.0.0-all.jar',
+                                         force: true
+                                
+                                sh 'echo "JAR downloaded from S3: $(ls -la encom-lambda/build/libs/encom-lambda-1.0.0-all.jar)"'
+                                
+                            } catch (Exception e) {
+                                error """Lambda JAR not found in S3. Please build the Lambda first.
 
 To build the JAR:
-1. Run ENCOM-Lambda job (any environment)
+1. Run ENCOM-Lambda job with ENVIRONMENT=${params.ENVIRONMENT}
 2. JAR will be automatically uploaded to S3
 3. Then retry this Infrastructure deployment
 
 Error: ${e.getMessage()}
-Looking for: s3://encom-build-artifacts-dev-us-west-1/artifacts/lambda/encom-lambda-latest.jar"""
+Looking for: s3://${bucketName}/artifacts/lambda/encom-lambda-latest.jar"""
+                            }
                         }
+                    } else {
+                        echo "Bootstrap mode: Skipping Lambda JAR download"
                     }
                 }
             }
