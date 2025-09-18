@@ -62,6 +62,7 @@ locals {
   
   # Frontend configuration
   frontend_bucket_name = "${local.project_name}-frontend-${local.environment}-${data.aws_region.current.name}"
+  artifacts_bucket_name = "${local.project_name}-build-artifacts-${local.environment}-${data.aws_region.current.name}"
   
   common_tags = {
     Project     = local.project_name
@@ -226,7 +227,7 @@ resource "aws_route53_record" "frontend_alias" {
 
 # S3 Bucket for build artifacts
 resource "aws_s3_bucket" "build_artifacts" {
-  bucket = "encom-build-artifacts-dev-us-west-1"
+  bucket = local.artifacts_bucket_name
   
   tags = merge(local.common_tags, {
     Component = "artifacts"

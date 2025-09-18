@@ -8,10 +8,6 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
-    archive = {
-      source  = "hashicorp/archive"
-      version = "~> 2.0"
-    }
   }
   
   backend "s3" {
@@ -123,11 +119,14 @@ module "lambda" {
   log_retention_days = var.log_retention_days
   
   environment_variables = {
-    DEFAULT_HEXAGON_COUNT = "50"
-    MAX_HEXAGON_COUNT     = "500"  # Higher limit for prod
-    CORRIDOR_RATIO        = "0.7"
-    ENVIRONMENT          = "prod"
+    DEFAULT_HEXAGON_COUNT = tostring(var.default_hexagon_count)
+    MAX_HEXAGON_COUNT     = tostring(var.max_hexagon_count)
+    CORRIDOR_RATIO        = tostring(var.corridor_ratio)
+    ENVIRONMENT           = local.environment
   }
+  
+  enable_function_url           = var.enable_lambda_function_url
+  enable_api_gateway_integration = false
   
   tags = merge(local.common_tags, {
     Component = "lambda"
@@ -138,16 +137,16 @@ module "lambda" {
 module "api_gateway" {
   source = "../../modules/api-gateway"
   
-  api_name           = local.api_name
-  lambda_invoke_arn  = module.lambda.function_invoke_arn
-  enable_api_key     = var.enable_api_key
+  api_name          = local.api_name
+  api_description   = "ENCOM Hexagonal Map Generator API - ${upper(local.environment)}"
+  stage_name        = local.environment
+  lambda_invoke_arn = module.lambda.function_invoke_arn
   
-  # Rate limiting configuration
-  throttle_rate_limit  = var.api_throttle_rate_limit
-  throttle_burst_limit = var.api_throttle_burst_limit
-  quota_limit         = var.api_quota_limit
-  
-  log_retention_days = var.log_retention_days
+  enable_api_key        = var.enable_api_key
+  throttle_rate_limit   = var.api_throttle_rate_limit
+  throttle_burst_limit  = var.api_throttle_burst_limit
+  quota_limit           = var.api_quota_limit
+  log_retention_days    = var.log_retention_days
   
   tags = merge(local.common_tags, {
     Component = "api-gateway"
@@ -192,13 +191,65 @@ module "frontend" {
   
   bucket_name         = local.frontend_bucket_name
   index_document      = "index.html"
-  price_class         = "PriceClass_All"  # Global distribution for prod
+  price_class         = "PriceClass_100"  # Cost-optimized for prod
   domain_name         = "encom.riperoni.com"
-  ssl_certificate_arn = var.deploy_frontend ? aws_acm_certificate.frontend[0].arn : ""
+  ssl_certificate_arn = var.deploy_frontend ? aws_acm_certificate_validation.frontend[0].certificate_arn : ""
   
   tags = merge(local.common_tags, {
     Component = "frontend"
   })
   
-  depends_on = [aws_acm_certificate.frontend]
+  depends_on = [aws_acm_certificate_validation.frontend]
+}
+
+# Route53 Hosted Zone (import existing)
+resource "aws_route53_zone" "main" {
+  name = "encom.riperoni.com"
+  
+  tags = merge(local.common_tags, {
+    Component = "dns"
+    Name      = "encom.riperoni.com"
+  })
+}
+
+# Route53 DNS validation record for ACM certificate
+resource "aws_route53_record" "cert_validation" {
+  for_each = var.deploy_frontend ? {
+    for dvo in aws_acm_certificate.frontend[0].domain_validation_options : dvo.domain_name => {
+      name   = dvo.resource_record_name
+      record = dvo.resource_record_value
+      type   = dvo.resource_record_type
+    }
+  } : {}
+
+  allow_overwrite = true
+  name            = each.value.name
+  records         = [each.value.record]
+  ttl             = 60
+  type            = each.value.type
+  zone_id         = aws_route53_zone.main.zone_id
+}
+
+# ACM certificate validation
+resource "aws_acm_certificate_validation" "frontend" {
+  provider                = aws.us_east_1
+  count                   = var.deploy_frontend ? 1 : 0
+  certificate_arn         = aws_acm_certificate.frontend[0].arn
+  validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
+}
+
+# Route53 A record with alias pointing to CloudFront distribution
+resource "aws_route53_record" "frontend_alias" {
+  count   = var.deploy_frontend ? 1 : 0
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "encom.riperoni.com"
+  type    = "A"
+  
+  alias {
+    name                   = module.frontend[0].cloudfront_domain_name
+    zone_id                = module.frontend[0].cloudfront_hosted_zone_id
+    evaluate_target_health = false
+  }
+  
+  depends_on = [module.frontend]
 }

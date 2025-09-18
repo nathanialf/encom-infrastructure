@@ -31,6 +31,16 @@ output "lambda_log_group" {
   value       = module.lambda.log_group_name
 }
 
+output "lambda_function_url" {
+  description = "Lambda function URL (if enabled)"
+  value       = module.lambda.function_url
+}
+
+output "api_gateway_url" {
+  description = "Base URL of the API Gateway"
+  value       = module.api_gateway.api_url
+}
+
 # Frontend outputs (when enabled)
 output "frontend_bucket_name" {
   description = "Name of the S3 bucket for frontend hosting"

@@ -7,13 +7,38 @@ variable "aws_region" {
 variable "lambda_memory_size" {
   description = "Lambda function memory in MB"
   type        = number
-  default     = 1024  # Higher memory for production
+  default     = 512
 }
 
 variable "lambda_timeout" {
   description = "Lambda function timeout in seconds"
   type        = number
-  default     = 60  # Longer timeout for production
+  default     = 30
+}
+
+variable "enable_lambda_function_url" {
+  description = "Enable Lambda function URL for direct HTTP access"
+  type        = bool
+  default     = false
+}
+
+# Map Generation Configuration
+variable "default_hexagon_count" {
+  description = "Default number of hexagons to generate"
+  type        = number
+  default     = 50
+}
+
+variable "max_hexagon_count" {
+  description = "Maximum number of hexagons allowed"
+  type        = number
+  default     = 200
+}
+
+variable "corridor_ratio" {
+  description = "Default corridor to room ratio"
+  type        = number
+  default     = 0.7
 }
 
 variable "log_retention_days" {
