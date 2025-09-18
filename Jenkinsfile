@@ -149,10 +149,6 @@ Looking for: s3://${bucketName}/artifacts/lambda/encom-lambda-latest.jar"""
             }
             steps {
                 script {
-                    if (params.ENVIRONMENT == 'prod') {
-                        input message: 'Apply to Production?', ok: 'Apply'
-                    }
-                    
                     def awsCredentials = params.ENVIRONMENT == 'prod' ? 'aws-encom-prod' : 'aws-encom-dev'
                     
                     withAWS(credentials: awsCredentials, region: env.AWS_REGION) {
