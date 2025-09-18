@@ -15,7 +15,7 @@ terraform {
   }
   
   backend "s3" {
-    bucket = "encom-terraform-state-prod"
+    bucket = "encom-terraform-state-prod-us-west-1"
     key    = "encom/prod/terraform.tfstate"
     region = "us-west-1"
   }
@@ -118,8 +118,8 @@ module "lambda" {
   
   function_name       = local.lambda_function_name
   jar_file_path      = local.lambda_jar_path
-  lambda_memory_size = var.lambda_memory_size
-  lambda_timeout     = var.lambda_timeout
+  memory_size = var.lambda_memory_size
+  timeout     = var.lambda_timeout
   log_retention_days = var.log_retention_days
   
   environment_variables = {
@@ -139,7 +139,7 @@ module "api_gateway" {
   source = "../../modules/api-gateway"
   
   api_name           = local.api_name
-  lambda_invoke_arn  = module.lambda.invoke_arn
+  lambda_invoke_arn  = module.lambda.function_invoke_arn
   enable_api_key     = var.enable_api_key
   
   # Rate limiting configuration

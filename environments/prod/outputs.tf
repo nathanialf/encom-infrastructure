@@ -1,7 +1,7 @@
 # API Gateway outputs
 output "api_gateway_endpoint" {
   description = "The invoke URL for the API Gateway"
-  value       = module.api_gateway.invoke_url
+  value       = module.api_gateway.api_endpoint
 }
 
 output "api_gateway_id" {
@@ -11,7 +11,7 @@ output "api_gateway_id" {
 
 output "api_key" {
   description = "The API key for accessing the API (if enabled)"
-  value       = var.enable_api_key ? module.api_gateway.api_key : null
+  value       = var.enable_api_key ? module.api_gateway.api_key_value : null
   sensitive   = true
 }
 
