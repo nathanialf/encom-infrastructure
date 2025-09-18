@@ -32,7 +32,7 @@ variable "default_hexagon_count" {
 variable "max_hexagon_count" {
   description = "Maximum number of hexagons allowed"
   type        = number
-  default     = 200
+  default     = 1000
 }
 
 variable "corridor_ratio" {
