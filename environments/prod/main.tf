@@ -163,7 +163,7 @@ resource "aws_lambda_permission" "api_gateway_invoke" {
   function_name = module.lambda.function_name
   principal     = "apigateway.amazonaws.com"
   
-  source_arn = "${module.api_gateway.execution_arn}/*/*"
+  source_arn = "${module.api_gateway.api_execution_arn}/*/*"
   
   depends_on = [module.lambda, module.api_gateway]
 }
